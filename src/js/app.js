@@ -33,9 +33,11 @@ App = {
     render: function () {
         var electionInstance;
         var loader = $("#loader");
-        var content = $("#content");
+        var votelist = $(".voting-list");
+        var voteresult = $(".voting-result");
         loader.show();
-        content.hide();
+        votelist.show();
+        voteresult.show();
         // Load account data
         web3.eth.getCoinbase(function (err, account) {
             if (err === null) {
@@ -54,6 +56,7 @@ App = {
             candidatesSelect.empty();
             for (var i = 1; i <= candidatesCount; i++) {
                 electionInstance.candidates(i).then(function (candidate) {
+                    console.log(candidate)
                     var avatar = candidate [2];
                     var id = candidate[0];
                     var name = candidate[1];
@@ -65,7 +68,9 @@ App = {
                           "</td><td>" + percentage + " %" + "</td></tr>";
                       candidatesResults.append(candidateTemplate);
                       // Render candidate ballot option
-                      var candidateOption = "<option value='" + id + "' >" + name + "</ option>"
+                      var candidateOption = '<div class="form-check">'+
+                        '<input class="form-check-input" type="radio" name="vote"  id="'+id+'"value="' + id + '">'+
+                        '<label class="form-check-label" for="'+id+'">'+name +' </label> </div>';
                       candidatesSelect.append(candidateOption);
                     })
                 });
@@ -73,18 +78,24 @@ App = {
             return electionInstance.voters(App.account);
         }).then(function (hasVoted) {
             // Do not allow a user to vote
+            var votingList =$('.voting-list');
+            var votingResult = $('.voting-result');
             if (hasVoted) {
-                $('form').hide();
+                votingList.hide();
+                votingResult.show();
+            }else {
+                votingList.show();
+                votingResult.hide();
             }
             loader.hide();
-            content.show();
+
         }).catch(function (error) {
             console.warn(error);
         });
     }
     ,
     castVote: function () {
-        var candidateId = $('#candidatesSelect').val();
+        var candidateId = $('input[name="vote"]:checked').val();
         App.contracts.Election.deployed().then(function (instance) {
             return instance.vote(candidateId, {from: App.account});
         }).then(function (result) {
